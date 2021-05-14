@@ -22,7 +22,7 @@ export class BezierUvsComponent implements OnInit {
 1
 ((-1.1589628458023071, -1.6762653589248657, 1), (-0.6589628458023071, -1.1762653589248657, 1), (2.4685609340667725, 1.3283957242965698, 1)) ((-3.308171272277832, 1.3792165517807007, 1), (1.7162351608276367, -1.2275062799453735, 1), (2.963348150253296, 0.1608094573020935, 1))`;
   mainImage: SafeUrl | null = null;
-  auxImage: string | null = null;
+  auxImage: SafeUrl | null = null;
 
   @ViewChild('fileInput') fileInput: any;
 
@@ -32,7 +32,6 @@ export class BezierUvsComponent implements OnInit {
     this.wasmPromise.then(x => {
       this.loading = false;
       this.wasm = x;
-      console.dir(this.wasm);
     })
     .catch(err => console.error(err));
   }
@@ -52,7 +51,6 @@ export class BezierUvsComponent implements OnInit {
         const decoder = new TextDecoder();
         
         this.fileResult = decoder.decode(e.target.result);
-        console.log(this.fileResult);
       }
       reader.readAsArrayBuffer(this.fileInput.nativeElement.files[0]);
     }
@@ -65,7 +63,11 @@ export class BezierUvsComponent implements OnInit {
         let image = new Blob([generated_images.main.buffer], {type: "image/png"});
         
         this.mainImage = this.sanitizer.bypassSecurityTrustUrl(URL.createObjectURL(image));
-        console.dir(image);
+      }
+      if (generated_images.aux !== null) {
+        let image = new Blob([generated_images.aux.buffer], {type: "image/png"});
+        
+        this.auxImage = this.sanitizer.bypassSecurityTrustUrl(URL.createObjectURL(image));
       }
     }
   }
