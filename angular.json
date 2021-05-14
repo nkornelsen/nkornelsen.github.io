@@ -59,7 +59,7 @@
                 {
                   "type": "anyComponentStyle",
                   "maximumWarning": "2kb",
-                  "maximumError": "4kb"
+                  "maximumError": "150kb"
                 }
               ]
             }
@@ -124,6 +124,10 @@
               "devServerTarget": "personal-site:serve:production"
             }
           }
+        },
+        "deploy": {
+          "builder": "angular-cli-ghpages:deploy",
+          "options": {}
         }
       }
     }
