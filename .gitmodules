@@ -1,0 +1,3 @@
+[submodule "vector-to-mesh-uv"]
+	path = vector-to-mesh-uv
+	url = https://github.com/nkornelsen/vector-to-mesh-uv
