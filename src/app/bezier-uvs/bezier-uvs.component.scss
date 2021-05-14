@@ -1,11 +1,9 @@
-.loaded-data .content {
-  white-space: pre-wrap;
-  overflow: hidden;
-  overflow-y: scroll;
-  max-height: 20em;
+.mesh-data {
+  width: 100%;
 }
 
-.loaded-data {
-  width: 40em;
-  min-height: 5em;
+.mesh-data-field {
+  height: 20em;
+  max-height: 40em;
+  width: 100%;
 }

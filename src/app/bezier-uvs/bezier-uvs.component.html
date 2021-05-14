@@ -7,10 +7,16 @@ Loading...
 
   <button mat-raised-button color="primary" (click)="onGenerateImages()" style="margin-left: 1em;">Generate UV Data</button>
 
-  <mat-card class="loaded-data" style="margin-top: 2em;">
+  <!-- <mat-card class="loaded-data" style="margin-top: 2em;">
     <mat-card-title>Loaded data</mat-card-title>
     <mat-card-content class="content">{{ this.fileResult }}</mat-card-content>
-  </mat-card>
+  </mat-card> -->
+  <br>
+  <br>
+  <mat-form-field class="mesh-data">
+    <mat-label>Mesh Data</mat-label>
+    <textarea matInput #meshDataField class="mesh-data-field" [(ngModel)]="fileResult"></textarea>
+  </mat-form-field>
 
   <img [src]="mainImage">
 </div>

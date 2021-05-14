@@ -11,6 +11,8 @@ import { MatListModule } from '@angular/material/list';
 import { TopLayoutComponent } from './top-layout/top-layout.component';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatButtonModule } from '@angular/material/button';
+import { MatInputModule } from '@angular/material/input';
+import { FormsModule } from '@angular/forms';
 import { BezierUvsComponent } from './bezier-uvs/bezier-uvs.component';
 
 @NgModule({
@@ -27,7 +29,9 @@ import { BezierUvsComponent } from './bezier-uvs/bezier-uvs.component';
     MatToolbarModule,
     MatListModule,
     MatTabsModule,
-    MatButtonModule
+    MatButtonModule,
+    MatInputModule,
+    FormsModule
   ],
   providers: [],
   bootstrap: [AppComponent]
