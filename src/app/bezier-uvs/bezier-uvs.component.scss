@@ -1,0 +1,11 @@
+.loaded-data .content {
+  white-space: pre-wrap;
+  overflow: hidden;
+  overflow-y: scroll;
+  max-height: 20em;
+}
+
+.loaded-data {
+  width: 40em;
+  min-height: 5em;
+}
