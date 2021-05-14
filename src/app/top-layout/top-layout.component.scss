@@ -1,0 +1,28 @@
+@import '~@angular/material/theming';
+@import '../../styling/theme';
+
+.card-content {
+  display: grid;
+  grid-template-columns: minmax(min-content, 20em) auto;
+}
+
+:host ::ng-deep .mat-pseudo-checkbox {
+  display: none;
+}
+
+.selection-list {
+  border-right: 2px solid mat-color($personal-site-primary);
+  padding-top: 0;
+}
+
+.mat-list-option[aria-selected="true"] {
+  background-color: rgba(220, 220, 220, 1);
+}
+
+mat-tab-group {
+  margin-left: 1em;
+}
+
+mat-card {
+  margin: 2em;
+}
