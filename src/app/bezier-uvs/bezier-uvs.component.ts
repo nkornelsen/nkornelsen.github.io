@@ -8,9 +8,23 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 })
 export class BezierUvsComponent implements OnInit {
 
+  outputTypes = [
+    {value: "bezier",
+    viewValue: "Bezier Derivative"}, 
+    {value: "distance",
+    viewValue: "Distance to Curve"}, 
+    {value: "coords",
+    viewValue: "Coordinates of Points"}, 
+    {value: "length",
+    viewValue: "Length Along Curve"}
+  ];
+
+  selectedOutput: any;
   wasm: any;
   wasmPromise: Promise<any>;
   loading: boolean;
+  width: number = 255;
+  height: number = 255;
   fileResult: String = `4
 -1 -1 1
 1 -1 1
@@ -37,6 +51,7 @@ export class BezierUvsComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.selectedOutput = this.outputTypes[0].value;
   }
 
   say_hello(): void {
@@ -58,16 +73,19 @@ export class BezierUvsComponent implements OnInit {
 
   onGenerateImages() {
     if (this.fileResult && this.fileResult !== "") {
-      let generated_images = this.wasm.generate_images(this.fileResult);
-      if (generated_images.main !== null) {
-        let image = new Blob([generated_images.main.buffer], {type: "image/png"});
-        
-        this.mainImage = this.sanitizer.bypassSecurityTrustUrl(URL.createObjectURL(image));
-      }
-      if (generated_images.aux !== null) {
-        let image = new Blob([generated_images.aux.buffer], {type: "image/png"});
-        
-        this.auxImage = this.sanitizer.bypassSecurityTrustUrl(URL.createObjectURL(image));
+      let generated_images = this.wasm.generate_images(this.fileResult, this.selectedOutput, this.width, this.height);
+      if (generated_images) {
+        if (generated_images.main !== null) {
+          let image = new Blob([generated_images.main.buffer], {type: "image/png"});
+          
+          this.mainImage = this.sanitizer.bypassSecurityTrustUrl(URL.createObjectURL(image));
+        }
+        if (generated_images.aux !== null) {
+          let image = new Blob([generated_images.aux.buffer], {type: "image/png"});
+          
+          this.auxImage = this.sanitizer.bypassSecurityTrustUrl(URL.createObjectURL(image));
+        }
+          
       }
     }
   }

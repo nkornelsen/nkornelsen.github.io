@@ -30,8 +30,10 @@ pub enum DataOutputType {
     LENGTH
 }
 
-pub type Vector = Vector3<f64>;
-pub type Vector2 = nalgebra::Vector2<f64>;
+use bezier_utils::BezierNum;
+
+pub type Vector = Vector3<BezierNum>;
+pub type Vector2 = nalgebra::Vector2<BezierNum>;
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
@@ -42,11 +44,13 @@ pub fn greet() {
 fn print(s: String) {
     #[cfg(target_arch = "wasm32")]
     console::log_1(&s.into());
+    #[cfg(not(target_arch = "wasm32"))]
+    println!("{}", s);
 }
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
-pub fn generate_images(mesh_data: String, output_type: String) -> JsValue {
+pub fn generate_images(mesh_data: String, output_type: String, width: isize, height: isize) -> JsValue {
     let output = match output_type.as_str() {
         "bezier" => DataOutputType::BEZIER,
         "distance" => DataOutputType::DISTANCE,
@@ -54,7 +58,10 @@ pub fn generate_images(mesh_data: String, output_type: String) -> JsValue {
         "length" => DataOutputType::LENGTH,
         _ => DataOutputType::BEZIER,
     };
-    let (main, aux) = generate_images_internal(mesh_data, output);
+    if !(width > 0 && height > 0) {
+        return JsValue::null();
+    }
+    let (main, aux) = generate_images_internal(mesh_data, output, width as u32, height as u32);
     use js_sys::Uint8Array;
     let obj = js_sys::Object::new();
     js_sys::Reflect::set(&obj, &"main".into(), &Uint8Array::from(&main as &[u8])).unwrap();
@@ -66,7 +73,7 @@ pub fn generate_images(mesh_data: String, output_type: String) -> JsValue {
     JsValue::from(obj)
 }
 
-fn generate_images_internal(mesh_data: String, output_type: DataOutputType) -> (Vec<u8>, Option<Vec<u8>>) {
+pub fn generate_images_internal(mesh_data: String, output_type: DataOutputType, im_width: u32, im_height: u32) -> (Vec<u8>, Option<Vec<u8>>) {
     // let filename = "vertex_uvs";
   
     // let contents = fs::read_to_string(filename).expect("Failed to read file");
@@ -81,10 +88,10 @@ fn generate_images_internal(mesh_data: String, output_type: DataOutputType) -> (
     let mut vertices: Vec<Vector> = Vec::new();
     let mut polygons: Vec<Vec<(usize, Vector2)>> = Vec::new();
     let mut splines: Vec<Vec<(Vector, Vector, Vector)>> = Vec::new();
-    let mut spline_lengths: Vec<Vec<f64>> = Vec::new();
+    let mut spline_lengths: Vec<Vec<BezierNum>> = Vec::new();
   
     for i in 0..vertex_count {
-        let (x, y, z): (f64, f64, f64);
+        let (x, y, z): (BezierNum, BezierNum, BezierNum);
         scan!(lines[i+1].bytes() => "{} {} {}", x, y, z);
         vertices.push(Vector::new(x, y, z));
     }
@@ -94,7 +101,7 @@ fn generate_images_internal(mesh_data: String, output_type: DataOutputType) -> (
         let mut poly = Vec::new();
         for capture in loop_regex.captures_iter(lines[i+2+vertex_count]) {
             let vertex_idx = capture[1].parse::<usize>().unwrap();
-            let (uv_x, uv_y) = (capture[2].parse::<f64>().unwrap(), capture[3].parse::<f64>().unwrap());
+            let (uv_x, uv_y) = (capture[2].parse::<BezierNum>().unwrap(), capture[3].parse::<BezierNum>().unwrap());
             poly.push((vertex_idx, Vector2::new(uv_x, uv_y)));
         }
         polygons.push(poly);
@@ -105,9 +112,9 @@ fn generate_images_internal(mesh_data: String, output_type: DataOutputType) -> (
         let mut spline = Vec::new();
         for capture in spline_regex.captures_iter(lines[i+3+vertex_count+polygon_count]) {
             let (p1, p2, p3) = 
-                (Vector::new(capture[1].parse::<f64>().unwrap(), capture[2].parse::<f64>().unwrap(), capture[3].parse::<f64>().unwrap()), 
-                Vector::new(capture[4].parse::<f64>().unwrap(), capture[5].parse::<f64>().unwrap(), capture[6].parse::<f64>().unwrap()), 
-                Vector::new(capture[7].parse::<f64>().unwrap(), capture[8].parse::<f64>().unwrap(), capture[9].parse::<f64>().unwrap()));
+                (Vector::new(capture[1].parse::<BezierNum>().unwrap(), capture[2].parse::<BezierNum>().unwrap(), capture[3].parse::<BezierNum>().unwrap()), 
+                Vector::new(capture[4].parse::<BezierNum>().unwrap(), capture[5].parse::<BezierNum>().unwrap(), capture[6].parse::<BezierNum>().unwrap()), 
+                Vector::new(capture[7].parse::<BezierNum>().unwrap(), capture[8].parse::<BezierNum>().unwrap(), capture[9].parse::<BezierNum>().unwrap()));
             spline.push((p1, p2, p3));
         }
         splines.push(spline);
@@ -134,11 +141,9 @@ fn generate_images_internal(mesh_data: String, output_type: DataOutputType) -> (
   
     // closest_quadratic_bezier_t_2d((-0.088, 0.845), vec![(0.226, 1.03), (0.5, 0.392), (0.34, 1.112)]);
   
-    let (im_width, im_height) = (256, 256);
-  
     let mut main_data = vec![vec![vec![0_u16; 3]; im_width as usize]; im_height as usize];
   
-    let mut aux_data = vec![vec![vec![0_f64; 3]; im_width as usize]; im_height as usize];
+    let mut aux_data = vec![vec![vec![0.; 3]; im_width as usize]; im_height as usize];
 
     let mut write_mask = vec![vec![false; im_width as usize]; im_height as usize];
   
@@ -191,8 +196,8 @@ fn generate_images_internal(mesh_data: String, output_type: DataOutputType) -> (
         let aux_output = if output == DataOutputType::LENGTH {
             let mut aux_image_data = Vec::new();
   
-            extend_data_f64(&mut aux_data, &mut write_mask);
-            extend_data_f64(&mut aux_data, &mut write_mask);
+            extend_data_BezierNum(&mut aux_data, &mut write_mask);
+            extend_data_BezierNum(&mut aux_data, &mut write_mask);
             for row in aux_data.iter_mut() {
                 for px in row.iter_mut() {
                     for val in px.iter_mut() {
@@ -261,8 +266,8 @@ pub fn extend_data(data: &mut Vec<Vec<Vec<u16>>>, write_mask: &mut Vec<Vec<bool>
     }
 }
 
-pub fn extend_data_f64(data: &mut Vec<Vec<Vec<f64>>>, write_mask: &Vec<Vec<bool>>) {
-    let mut overlay_data = vec![vec![vec![0_f64; 3]; data[0].len()]; data.len()];
+pub fn extend_data_BezierNum(data: &mut Vec<Vec<Vec<BezierNum>>>, write_mask: &Vec<Vec<bool>>) {
+    let mut overlay_data = vec![vec![vec![0.; 3]; data[0].len()]; data.len()];
 
     for i in 0..data.len() as isize {
         for j in 0..data.len() as isize {
@@ -297,18 +302,18 @@ pub fn calculate_value_at_idx(i: u32, j: u32,
         vertices: &Vec<Vector>, 
         polygons: &Vec<Vec<(usize, Vector2)>>, 
         splines: &Vec<Vec<(Vector, Vector, Vector)>>,
-        spline_lengths: &Vec<Vec<f64>>,
-        x_y_z_max: &mut f64,
+        spline_lengths: &Vec<Vec<BezierNum>>,
+        x_y_z_max: &mut BezierNum,
         im_width: u32, im_height: u32, 
         data: &mut Vec<Vec<Vec<u16>>>,
-        aux_data: &mut Vec<Vec<Vec<f64>>>,
+        aux_data: &mut Vec<Vec<Vec<BezierNum>>>,
         write_mask: &mut Vec<Vec<bool>>,
         _completed_values: &mut isize, 
         step: usize, 
         output: DataOutputType, 
         total_values: u32) {
     for k in 0..polygons.len() {
-        let point = Vector2::new((j as f64 + 0.5) / im_width as f64, (i as f64 + 0.5) / im_height as f64);
+        let point = Vector2::new((j as BezierNum + 0.5) / im_width as BezierNum, (i as BezierNum + 0.5) / im_height as BezierNum);
         if tri_contains_point(&vec![polygons[k][0].1, polygons[k][1].1, polygons[k][2].1], point) {
             // data[i as usize][j as usize] = [k as u8 * 30, k as u8 * 30, k as u8 * 30].to_vec();
             let barycentric = cartesian_to_barycentric(&polygons[k], point);
@@ -328,19 +333,19 @@ pub fn calculate_value_at_idx(i: u32, j: u32,
             let mut derivative = bezier_derivative(&splines, best_spline);
             // let mut derivative = bezier_utils::point_derivative(best_spline.0, );
             for d in derivative.iter_mut() {
-                *d = (*d + 1.0) * 32768_f64;
+                *d = (*d + 1.0) * 32768.;
             }
             // println!("Derivative: {:?}", derivative);
             // data[ im_height as usize - 1 - i as usize][j as usize] = [((derivative[0] + 1.0) * 128_f32) as u8, ((derivative[1] + 1.0) * 128_f32) as u8, ((derivative[2] + 1.0) * 128_f32) as u8 ].to_vec();
             {
                 write_mask[im_height as usize - 1 - i as usize][j as usize] = true;
                 if output == DataOutputType::DISTANCE {
-                    data[im_height as usize - 1 - i as usize][j as usize] = [(best_spline.3 * 32768_f64) as u16, (best_spline.3 * 32768_f64) as u16, (best_spline.3 * 32768_f64) as u16].to_vec();
+                    data[im_height as usize - 1 - i as usize][j as usize] = [(best_spline.3 * 32768.) as u16, (best_spline.3 * 32768.) as u16, (best_spline.3 * 32768.) as u16].to_vec();
                 } else if output == DataOutputType::BEZIER {
                     data[im_height as usize - 1 - i as usize][j as usize] = [derivative[0] as u16, derivative[1] as u16, derivative[2] as u16].to_vec();
                 } else if output == DataOutputType::COORDS {
-                    let fac = 32768_f64;
-                    data[im_height as usize - 1 - i as usize][j as usize] = [((cartesian[0] + 1_f64) * fac) as u16, ((cartesian[1] + 1_f64) * fac) as u16, ((cartesian[2] + 1_f64) * fac) as u16].to_vec();
+                    let fac = 32768.;
+                    data[im_height as usize - 1 - i as usize][j as usize] = [((cartesian[0] + 1.) * fac) as u16, ((cartesian[1] + 1.) * fac) as u16, ((cartesian[2] + 1.) * fac) as u16].to_vec();
                 } else if output == DataOutputType::LENGTH {
                     let (a, b, t, _) = best_spline;
                     let pts = vec![splines[a][b].1, splines[a][b].2, splines[a][b+1].0, splines[a][b+1].1];
@@ -380,14 +385,14 @@ fn cartesian_to_barycentric(triangle: &Vec<(usize, Vector2)>, point: Vector2) ->
     let det = ((y2 - y3) * (x1 - x3)) + ((x3 - x2) * (y1 - y3));
     let l1 = (((y2 - y3) * (x - x3)) + ((x3 - x2) * (y - y3))) / det;
     let l2 = (((y3 - y1) * (x - x3)) + ((x1 - x3) * (y - y3))) / det;
-    let l3 = 1_f64 - l1 - l2;
+    let l3 = 1. - l1 - l2;
 
     Vector::new(l1, l2, l3)
 }
 
 fn barycentric_to_cartesian(triangle: &Vec<Vector>, point: Vector) -> Vector {
     let (mut l1, mut l2, mut l3) = (point[0], point[1], point[2]);
-    if l1 + l2 + l3 != 1_f64 {
+    if l1 + l2 + l3 != 1. {
         // println!("Normalizing");
         let s = l1 + l2 + l3;
         l1 /= s;
@@ -419,8 +424,8 @@ pub fn flatten<T>(nested: Vec<Vec<T>>) -> Vec<T> {
     nested.into_iter().flatten().collect()
 }
 
-fn closest_spline(splines: &Vec<Vec<(Vector, Vector, Vector)>>, point: Vector) -> (usize, usize, f64, f64) {
-    let mut best = (0, 0, 0_f64, -1_f64);
+fn closest_spline(splines: &Vec<Vec<(Vector, Vector, Vector)>>, point: Vector) -> (usize, usize, BezierNum, BezierNum) {
+    let mut best = (0, 0, 0., -1.);
     for i in 0..splines.len() {
         let spline = &splines[i];
         for j in 0..spline.len()-1 {
@@ -431,7 +436,7 @@ fn closest_spline(splines: &Vec<Vec<(Vector, Vector, Vector)>>, point: Vector) -
 
             // let cur = closest_quadratic_bezier_t_3d(point, vec![p0, p1, p2]);
             let cur = bezier_utils::distance_to_curve(point, &vec![p0, p1, p2, p3]);
-            if best.3 == -1_f64 || cur.1 < best.3 {
+            if best.3 == -1. || cur.1 < best.3 {
                 best = (i, j, cur.0, cur.1);
             }
         }
@@ -439,7 +444,7 @@ fn closest_spline(splines: &Vec<Vec<(Vector, Vector, Vector)>>, point: Vector) -
     best
 }
 
-fn bezier_derivative(splines: &Vec<Vec<(Vector, Vector, Vector)>>, param: (usize, usize, f64, f64)) -> Vector {
+fn bezier_derivative(splines: &Vec<Vec<(Vector, Vector, Vector)>>, param: (usize, usize, BezierNum, BezierNum)) -> Vector {
     // use nalgebra::Vector3;
     // let p0 = Vector3::new(splines[param.0][param.1].1.0, splines[param.0][param.1].1.1, splines[param.0][param.1].1.2);
     // let p1 = Vector3::new(splines[param.0][param.1].2.0, splines[param.0][param.1].2.1, splines[param.0][param.1].2.2);

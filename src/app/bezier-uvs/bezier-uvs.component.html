@@ -7,6 +7,27 @@ Loading...
 
   <button mat-raised-button color="primary" (click)="onGenerateImages()" style="margin-left: 1em;">Generate UV Data</button>
 
+  <mat-form-field style="margin-left: 1em;">
+    <mat-label>Output Type</mat-label>
+    <mat-select [(ngModel)]="selectedOutput">
+      <mat-option *ngFor="let output of outputTypes" [value]="output.value">
+        {{ output.viewValue }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <div style="display: grid; grid-template-rows: min-content auto; grid-template-columns: auto auto; min-width: 10em; max-width: 40%">
+    <span style="grid-row: 1">Output Dimensions</span>
+    <mat-form-field style="grid-row: 2">
+      <mat-label>X</mat-label>
+      <input matInput type="number" value="255" [(ngModel)]="width">
+    </mat-form-field>
+    <mat-form-field style="grid-row: 2">
+      <mat-label>Y</mat-label>
+      <input matInput type="number" value="255" [(ngModel)]="height">
+    </mat-form-field>
+  </div>
+
   <!-- <mat-card class="loaded-data" style="margin-top: 2em;">
     <mat-card-title>Loaded data</mat-card-title>
     <mat-card-content class="content">{{ this.fileResult }}</mat-card-content>

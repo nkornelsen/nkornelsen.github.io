@@ -12,6 +12,7 @@ import { TopLayoutComponent } from './top-layout/top-layout.component';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { FormsModule } from '@angular/forms';
 import { BezierUvsComponent } from './bezier-uvs/bezier-uvs.component';
 
@@ -31,6 +32,7 @@ import { BezierUvsComponent } from './bezier-uvs/bezier-uvs.component';
     MatTabsModule,
     MatButtonModule,
     MatInputModule,
+    MatSelectModule,
     FormsModule
   ],
   providers: [],
