@@ -47,7 +47,7 @@ fn print(s: String) {
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 pub fn generate_images(mesh_data: String, output_type: String) -> JsValue {
-    let output = match output_type {
+    let output = match output_type.as_str() {
         "bezier" => DataOutputType::BEZIER,
         "distance" => DataOutputType::DISTANCE,
         "coords" => DataOutputType::COORDS,
