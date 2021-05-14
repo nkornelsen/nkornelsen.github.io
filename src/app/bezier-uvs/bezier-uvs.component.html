@@ -1,13 +1,23 @@
+<p>
+  See <a href="https://github.com/nkornelsen/vector-to-mesh-uv">README.md</a> for details on the generated output and how to export UV and vertex data from Blender.
+</p>
+
 <div *ngIf="loading">
 Loading...
 </div>
 <div class="controls" *ngIf="!loading">
-  <button mat-raised-button color="accent" (click)="fileInput.click()">Upload Mesh Data</button>
-  <input hidden (change)="onFileSelected()" #fileInput type="file" id="file">
 
-  <button mat-raised-button color="primary" (click)="onGenerateImages()" style="margin-left: 1em;">Generate UV Data</button>
+  <div style="display: grid; grid-template-columns: min-content min-content min-content;">
+    <button mat-raised-button color="accent" (click)="fileInput.click()" style="grid-column: 1">Upload Mesh Data</button>
+    <input hidden (change)="onFileSelected()" #fileInput type="file" id="file" style="grid-column: 1">
 
-  <mat-form-field style="margin-left: 1em;">
+    <button mat-raised-button color="primary" (click)="onGenerateImages()" [disabled]="currentlyProcessing" style="margin-left: 1em; grid-column: 2">Generate UV Data</button>
+    <div style="display: flex; align-items: center; justify-content: center; grid-column: 3; margin-left: 2em;"><mat-spinner *ngIf="currentlyProcessing" [diameter]="20"></mat-spinner></div>
+  </div>
+  <br>
+  <br>
+
+  <mat-form-field>
     <mat-label>Output Type</mat-label>
     <mat-select [(ngModel)]="selectedOutput">
       <mat-option *ngFor="let output of outputTypes" [value]="output.value">
@@ -15,7 +25,7 @@ Loading...
       </mat-option>
     </mat-select>
   </mat-form-field>
-
+  <br>
   <div style="display: grid; grid-template-rows: min-content auto; grid-template-columns: auto auto; min-width: 10em; max-width: 40%">
     <span style="grid-row: 1">Output Dimensions</span>
     <mat-form-field style="grid-row: 2">
@@ -36,7 +46,7 @@ Loading...
   <br>
   <mat-form-field class="mesh-data">
     <mat-label>Mesh Data</mat-label>
-    <textarea matInput #meshDataField class="mesh-data-field" [(ngModel)]="fileResult"></textarea>
+    <textarea matInput #meshDataField class="mesh-data-field" [(ngModel)]="fileResult" style="font-family: monospace"></textarea>
   </mat-form-field>
 
   <img [src]="mainImage">
