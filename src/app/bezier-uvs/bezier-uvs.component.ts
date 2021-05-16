@@ -16,7 +16,7 @@ export class BezierUvsComponent implements OnInit {
     {value: "coords",
     viewValue: "Coordinates of Points"}, 
     {value: "length",
-    viewValue: "Length Along Curve"}
+    viewValue: "Length Along Curve + Offsets"}
   ];
 
   selectedOutput: any;

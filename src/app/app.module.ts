@@ -21,7 +21,7 @@ import { BezierUvsComponent } from './bezier-uvs/bezier-uvs.component';
   declarations: [
     AppComponent,
     TopLayoutComponent,
-    BezierUvsComponent
+    BezierUvsComponent,
   ],
   imports: [
     BrowserModule,
